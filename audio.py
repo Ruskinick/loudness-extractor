@@ -26,16 +26,6 @@ RATE = 44100
 WAVE_OUTPUT_FILENAME = "output.wav"
 
 
-BUFFER_LENGTH = RATE / BUFFER_SIZE * RECORD_SECONDS
-FRAMES = RATE * RECORD_SECONDS
-aud = None
-
-
-# Find device indexes
-def devices():
-    for i in range(p.get_device_count()):
-        print(p.get_device_info_by_index(i))
-
 
 def record():
     stream = p.open(format=FORMAT,\
@@ -72,17 +62,15 @@ def record():
 
 
 def analyze():
+    FRAMES = RATE * RECORD_SECONDS
     aud = wave.open(WAVE_OUTPUT_FILENAME)
     byte = aud.readframes(FRAMES)
     amplitudes = struct.unpack(str(len(byte)) + 'B', byte)
-    #amplitudes = struct.unpack('2B', byte)
-    #print(len(amplitudes))
 
     total, i = 0, 512
     while i < len(amplitudes):
         total += amplitudes[i] * amplitudes[i+1]
         i += 2
-    #print(list(amplitudes)[513])
     return max(0, 29000 - total/FRAMES)
 
 def terminate():
