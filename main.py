@@ -1,11 +1,17 @@
 from audio import record, analyze, terminate
-from audio import BUFFER_SIZE
-from configure import modify_configuration, apply_configuration, devices
+from configure import modify_configuration, devices, apply_configuration
 
 print("-_-_- Audio Loudness Extraction -_-_-")
 
-# Record audio and 
+
 def rec(i, text_output, filename=""):
+
+    """
+    Initiate the loop of recording and analyzing audio for I iterations.
+    If TEXT_OUTPUT, an output file containing an integer, named FILENAME, is created.
+
+    """
+    
     iteration = 0
     while iteration < i:	
         record()
@@ -17,7 +23,7 @@ def rec(i, text_output, filename=""):
         iteration += 1
     terminate()
 
-# Ask for input number of trials and output filename if needed.
+
 def run():
     
     print("\
@@ -26,18 +32,17 @@ def run():
     choice = input("Choose an option: ")
 
     if choice.upper() == 'R':
-        apply_configuration()
-        rec(iterations, output, filename)
+        run_options = apply_configuration()
+        ITERATIONS = run_options[9]
+        OUTPUT = run_options[6]
+        TXT_FILENAME = run_options[7]
+        rec(ITERATIONS, OUTPUT, TXT_FILENAME)
     elif choice.upper() == 'C':
         config()
 
-    #i = input("(Leave blank for indefinite recording) How many trials? ")
-    #filename = input("(Leave blank for no output) Where should this value be written? ")
+    rec(ITERATIONS, True if (TXT_FILENAME) else False, TXT_FILENAME)
 
 
-
-    rec(i, True if (filename) else False, filename)
-    
 def config():
 
     print("\
@@ -48,7 +53,6 @@ def config():
 
     if choice.upper() == 'M':
         modify_configuration()
-        #apply_configuration()
     elif choice.upper() == 'D':
         devices()
     elif choice == '<':
@@ -56,5 +60,3 @@ def config():
     run()
 
 run()
-# Test call
-# rec(10, True, "last_loudness.txt")

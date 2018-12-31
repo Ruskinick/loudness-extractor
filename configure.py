@@ -1,19 +1,7 @@
 import pyaudio
+from utils import ask_for, add_suffix
+p = pyaudio.PyAudio()
 # Make and apply modifications to the default configuration stored in config.txt
-
-
-def ask_for(prompt, input_type, default=None):
-    response = input(prompt)
-    if input_type == int:
-        try:
-            response = int(response)
-        except ValueError:
-            print("Invalid integer input; proceeding with prior value {0}.", "<to be implemented>")
-            response = default
-    if input_type == str:
-        if response == '':
-            return None
-    return response
 
 def modify_configuration():
     """ 
@@ -21,20 +9,24 @@ def modify_configuration():
     in the proper recording format.
 
     """
-    buffer = ask_for("Enter a buffer size (samples): ", int)
-    time = ask_for("Enter a file length (seconds): ", int)
-    channels = ask_for("Enter number of channels (1 for mono, 2 for stereo): ", int)
+    buffer = ask_for("Enter a buffer size (samples): ", int, BUFFER_SIZE)
+    time = ask_for("Enter a file length (seconds): ", int, RECORD_SECONDS)
+    channels = ask_for("Enter number of channels (1 for mono, 2 for stereo): ", int, CHANNELS)
 
     devices()
-    src = ask_for("Enter the index of the recording source: ", int, 0)
-    samplesize = ask_for("Enter a sample rate (44100, 44000, 96000...): ", int)
-    filename = ask_for("Enter .txt filename of output: ", str)
-    iterations = ask_for("Enter number of iterations: ", int, float('inf'))
+    src = ask_for("Enter the index of the recording source: ", int, SOURCE)
+    samplesize = ask_for("Enter a sample rate (44100, 48000, 96000...): ", int, RATE)
 
-    output = True if filename else False
+    # Quote nesting to prevent Python from directly evaluating the response to the prompt.
+    wav_filename = '"{0}"'.format(add_suffix(ask_for("Enter .wav filename of output: ", str), ".wav"))
+    print("Audio output will be printed to " + wav_filename)
 
-    if filename[-4:] != ".txt":
-        filename = filename + ".txt"
+    txt_filename = '"{0}"'.format(add_suffix(ask_for("Enter .txt filename of output: ", str), ".txt"))
+    print("Text output will be printed to " + txt_filename)
+
+    iterations = ask_for("Enter number of iterations (leave blank for infinity): ", int, float('inf'))
+
+    output = True if txt_filename else False
 
     config = open("config.txt", "w")
     config.write(\
@@ -46,11 +38,11 @@ CHANNELS = {2}\n\
 SOURCE = {3}\n\
 RATE = {4}\n\
 OUTPUT = {5}\n\
-WAVE_OUTPUT_FILENAME = {6}\n\
-ITERATIONS = {7}"\
-.strip().format(buffer, time, channels, src, samplesize, output, filename, iterations \
+TXT_OUTPUT_FILENAME = {6}\n\
+WAVE_OUTPUT_FILENAME = {7}\n\
+ITERATIONS = {8}"\
+.strip().format(buffer, time, channels, src, samplesize, output, txt_filename, wav_filename, iterations \
 ))
-
 
 def devices():
     """ 
@@ -58,23 +50,59 @@ def devices():
     Note: p.get_device_info_by_index(...) returns a dictionary.
 
     """
-    from audio import p
     print("Index: Name")
     for i in range(p.get_device_count()):
         print(str(p.get_device_info_by_index(i)['index']) + ": " + p.get_device_info_by_index(i)['name'])
     print()
 
 def apply_configuration():
+    """ 
+    Open and execute each line in config.txt if it is parseable.
+    Otherwise, use the previous (or default) value.
+    Returns a list containing the values of each variable in config.txt.
+
+    """
+
     config = open("config.txt", "r")
     
+    options = []
     i = 1
     for line in config:
         try:
             exec(line)
         except Exception:
             print("Line {0} of config.txt is unreadable. Using default values.".format(i))
+        options.append(eval(line.split(' ', 1)[0]))
         i += 1
     config.close
+    return options
 
 
-devices()
+# Default "safe" setup automatically loaded in before applying a configuration.
+BUFFER_SIZE = 1024
+RECORD_SECONDS = 4
+FORMAT = pyaudio.paInt16
+CHANNELS = 1
+SOURCE = 1
+RATE = 44100
+OUTPUT = False
+TXT_OUTPUT_FILENAME = "last_loudness.txt"
+WAVE_OUTPUT_FILENAME = "output.wav"
+ITERATIONS = float('inf')
+
+# Try block errors when no configuration file is detected. 
+try:
+    run_options = apply_configuration()
+
+    BUFFER_SIZE = run_options[0]
+    RECORD_SECONDS = run_options[1]
+    FORMAT = run_options[2]
+    CHANNELS = run_options[3]
+    SOURCE = run_options[4]
+    RATE = run_options[5]
+    OUTPUT = run_options[6]
+    TXT_OUTPUT_FILENAME = run_options[7]
+    WAVE_OUTPUT_FILENAME = run_options[8]
+    ITERATIONS = run_options[9]
+except Exception:
+    print("First time setup detected. To change options, select Configure from the main menu.")

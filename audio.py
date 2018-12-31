@@ -1,33 +1,38 @@
-import wave
-import pyaudio
-import struct
+try:
+    import pyaudio
+except Exception:
+    print("PyAudio is not installed.")
 
+import wave
+import struct
+from configure import apply_configuration,\
+BUFFER_SIZE, RECORD_SECONDS, FORMAT, CHANNELS, SOURCE, RATE, WAVE_OUTPUT_FILENAME 
+# Prevent errors with default values ready
+
+# Thanks to Hubert Pham and other contributors behind PyAudio for their Python-compatible recording tool.
 p = pyaudio.PyAudio()
 
-""" 
-First, record a Wave audio file from SOURCE of LENGTH seconds.
-Then, analyze the waveform of the file for its amplitude.
-
-Returns the average amplitude of the audio in SOURCE.
-
-
-### If ACCURATE (default False) is True, begin recording the next sequence before analysis.
-
-Thanks to Hubert Pham and other contributors behind PyAudio for their Python-compatible recording tool.
-
-"""
-
-BUFFER_SIZE = 1024
-RECORD_SECONDS = 4
-FORMAT = pyaudio.paInt16
-CHANNELS = 1
-SOURCE = 1                                              # Index of MME audio source defined in p.get_device_info_by_index(i)
-RATE = 44100
-WAVE_OUTPUT_FILENAME = "output.wav"
-
+config_values = apply_configuration()
+BUFFER_SIZE = config_values[0]
+RECORD_SECONDS = config_values[1]
+FORMAT = config_values[2]
+CHANNELS = config_values[3]
+SOURCE = config_values[4]
+RATE = config_values[5]
+WAVE_OUTPUT_FILENAME = config_values[8]
 
 
 def record():
+
+    """
+    Record RECORD_SECONDS of .wav audio with CHANNELS channels and RATE Hz sample rate from device index SOURCE.
+    Process microphone/device input in chunks of BUFFER_SIZE.
+    Save the recorded audio as WAVE_OUTPUT_FILENAME. Return nothing.
+
+    A list of input devices and their corresponding PyAudio indices can be displayed with devices().
+
+    """
+
     stream = p.open(format=FORMAT,\
                 input_device_index=SOURCE,\
                 channels=CHANNELS,\
@@ -39,38 +44,41 @@ def record():
 
     frames = []
 
-    for i in range(0, int(RATE / BUFFER_SIZE * RECORD_SECONDS)):
+    for _ in range(0, int(RATE / BUFFER_SIZE * RECORD_SECONDS)):
         data = stream.read(BUFFER_SIZE)
-        #print(len(data))
         frames.append(data)
-        #print(len(frames))
 
     print("Recording complete.")
 
     stream.stop_stream()
     stream.close()
-    #p.terminate()
 
     wf = wave.open(WAVE_OUTPUT_FILENAME, 'wb')
     wf.setnchannels(CHANNELS)
     wf.setsampwidth(p.get_sample_size(FORMAT))
     wf.setframerate(RATE)
     wf.writeframes(b''.join(frames))
+    frames = []
     wf.close()
 
 
-
-
 def analyze():
+
+    """
+    Analyze the recorded audio
+
+    """
+
     FRAMES = RATE * RECORD_SECONDS
     aud = wave.open(WAVE_OUTPUT_FILENAME)
     byte = aud.readframes(FRAMES)
     amplitudes = struct.unpack(str(len(byte)) + 'B', byte)
 
-    total, i = 0, 512
-    while i < len(amplitudes):
-        total += amplitudes[i] * amplitudes[i+1]
-        i += 2
+    # Skip static information stored in file header by skipping
+    total, file_index = 0, 512
+    while file_index < len(amplitudes):
+        total += amplitudes[file_index] * amplitudes[file_index+1]
+        file_index += 2
     return max(0, 29000 - total/FRAMES)
 
 def terminate():
