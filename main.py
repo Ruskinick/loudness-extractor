@@ -25,38 +25,53 @@ def rec(i, text_output, filename=""):
 
 
 def run():
-    
-    print("\
+
+    """ Display menus to direct and the user in setup. """
+
+    choice = ''
+    while not choice:
+        
+        print("\
             R: Run with selected settings\n\
             C: Configure")
-    choice = input("Choose an option: ")
+        choice = input("Choose an option: ")
 
-    if choice.upper() == 'R':
-        run_options = apply_configuration()
-        ITERATIONS = run_options[9]
-        OUTPUT = run_options[6]
-        TXT_FILENAME = run_options[7]
-        rec(ITERATIONS, OUTPUT, TXT_FILENAME)
-    elif choice.upper() == 'C':
-        config()
+        if choice.upper() == 'R':
+            run_options = apply_configuration()
+            ITERATIONS = run_options[9]
+            OUTPUT = run_options[6]
+            TXT_FILENAME = run_options[7]
+            rec(ITERATIONS, OUTPUT, TXT_FILENAME)
+        elif choice.upper() == 'C':
+            config()
+        else:
+            print('Unrecognized choice ' + choice + ', try again.')
+            choice = ''
+            
+
 
     rec(ITERATIONS, True if (TXT_FILENAME) else False, TXT_FILENAME)
 
 
 def config():
 
-    print("\
+    choice = ''
+    while not choice:
+        print("\
             M: Modify and apply new settings\n\
             D: Display all input devices\n\
             <: Return")
-    choice = input("Choose an option: ")
+        choice = input("Choose an option: ")
 
-    if choice.upper() == 'M':
-        modify_configuration()
-    elif choice.upper() == 'D':
-        devices()
-    elif choice == '<':
-        pass
+        if choice.upper() == 'M':
+            modify_configuration()
+        elif choice.upper() == 'D':
+            devices()
+        elif choice == '<':
+            pass
+        else:
+            print('Unrecognized choice ' + choice + ', try again.')
+            choice = ''
     run()
 
 run()

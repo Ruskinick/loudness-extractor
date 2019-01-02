@@ -28,11 +28,18 @@ def ask_for(prompt, input_type, default=None):
         try:
             response = int(response)
         except ValueError:
-            print("Invalid integer input; proceeding with prior value {0}.", default)
+            print("Invalid integer input; proceeding with prior value {0}.".format(default))
             response = default
-    if input_type == str:
+    elif input_type == str:
         if response == '':
             response = default
+    elif input_type == float:
+        try:
+            float(response)
+        except ValueError:
+            print("Invalid float input; proceeding with prior value {0}.".format(default))
+            response = default
+
     return response
 
 def add_suffix(string, suffix):
@@ -49,3 +56,13 @@ def add_suffix(string, suffix):
     if string[(0 - len(suffix)):] != suffix:
         string = string + suffix
     return string
+
+def between(input, low, high):
+    """ Check that an int is between some minimum and maximum value. """
+    if input >= low and input <= high:
+        return input
+    else:
+        if abs(input - low) > abs(input - high):
+            return high
+        else:
+            return low

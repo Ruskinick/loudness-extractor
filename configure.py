@@ -1,5 +1,5 @@
 import pyaudio
-from utils import ask_for, add_suffix
+from utils import ask_for, add_suffix, between
 p = pyaudio.PyAudio()
 # Make and apply modifications to the default configuration stored in config.txt
 
@@ -10,21 +10,21 @@ def modify_configuration():
 
     """
     buffer = ask_for("Enter a buffer size (samples): ", int, BUFFER_SIZE)
-    time = ask_for("Enter a file length (seconds): ", int, RECORD_SECONDS)
+    time = ask_for("Enter a file length (seconds): ", float, RECORD_SECONDS)
     channels = ask_for("Enter number of channels (1 for mono, 2 for stereo): ", int, CHANNELS)
 
     devices()
-    src = ask_for("Enter the index of the recording source: ", int, SOURCE)
+    src = between(ask_for("Enter the index of the recording source: ", int, SOURCE), 0, p.get_device_count() - 1)
     samplesize = ask_for("Enter a sample rate (44100, 48000, 96000...): ", int, RATE)
 
     # Quote nesting to prevent Python from directly evaluating the response to the prompt.
     wav_filename = '"{0}"'.format(add_suffix(ask_for("Enter .wav filename of output: ", str), ".wav"))
-    print("Audio output will be printed to " + wav_filename)
+    print("Audio output will be saved to " + wav_filename)
 
     txt_filename = '"{0}"'.format(add_suffix(ask_for("Enter .txt filename of output: ", str), ".txt"))
-    print("Text output will be printed to " + txt_filename)
+    print("Text output will be saved to " + txt_filename)
 
-    iterations = ask_for("Enter number of iterations (leave blank for infinity): ", int, float('inf'))
+    iterations = between(ask_for("Enter number of iterations (leave blank for infinity): ", int, 2147483647), 1, 2147483647)
 
     output = True if txt_filename else False
 
@@ -90,7 +90,7 @@ TXT_OUTPUT_FILENAME = "last_loudness.txt"
 WAVE_OUTPUT_FILENAME = "output.wav"
 ITERATIONS = float('inf')
 
-# Try block errors when no configuration file is detected. 
+# Try block errors when no configuration file is detected, and the program starts by setting up config.txt
 try:
     run_options = apply_configuration()
 
@@ -104,5 +104,7 @@ try:
     TXT_OUTPUT_FILENAME = run_options[7]
     WAVE_OUTPUT_FILENAME = run_options[8]
     ITERATIONS = run_options[9]
-except Exception:
-    print("First time setup detected. To change options, select Configure from the main menu.")
+except FileNotFoundError:
+    print("First time setup detected. Let's start by setting up a configuration file.")
+    open("config.txt", "a")
+    modify_configuration()

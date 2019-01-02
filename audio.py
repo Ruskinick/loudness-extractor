@@ -21,6 +21,8 @@ SOURCE = config_values[4]
 RATE = config_values[5]
 WAVE_OUTPUT_FILENAME = config_values[8]
 
+#def calibrate():
+#    print("Taking short measurement of quiet input.")
 
 def record():
 
@@ -65,7 +67,8 @@ def record():
 def analyze():
 
     """
-    Analyze the recorded audio
+    Analyze the recorded audio, decoding the bytes into numbers
+    and returning a float representing some measure of amplitude per frame.
 
     """
 
@@ -79,7 +82,8 @@ def analyze():
     while file_index < len(amplitudes):
         total += amplitudes[file_index] * amplitudes[file_index+1]
         file_index += 2
-    return max(0, 29000 - total/FRAMES)
+    return total/FRAMES
+    #return max(0, 30500 - total/FRAMES)
 
 def terminate():
     p.terminate()
